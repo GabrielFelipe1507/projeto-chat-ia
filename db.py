@@ -214,6 +214,32 @@ def salvar_mensagem(id_conversa, role, content):
         conn.close()
     return success
 
+def deletar_conversa(id_conversa):
+    """Deleta uma conversa e suas mensagens (usando ON DELETE CASCADE)."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+
+    success = False
+    cursor = conn.cursor()
+    try:
+        # Graças ao ON DELETE CASCADE na tabela mensagens,
+        # apagar a conversa apagará as mensagens associadas.
+        cursor.execute("DELETE FROM conversas WHERE id = %s", (id_conversa,))
+        conn.commit()
+        # Verifica se alguma linha foi realmente afetada (deletada)
+        if cursor.rowcount > 0:
+            success = True
+            print(f"Conversa ID {id_conversa} deletada com sucesso.")
+        else:
+            print(f"Nenhuma conversa encontrada com ID {id_conversa} para deletar.")
+
+    except mysql.connector.Error as err:
+        print(f"Erro ao deletar conversa ID {id_conversa}: {err}")
+    finally:
+        cursor.close()
+        conn.close()
+    return success
 
 # --- Bloco para Teste (Opcional) ---
 # Se você rodar este arquivo diretamente (python db.py), ele cria as tabelas.

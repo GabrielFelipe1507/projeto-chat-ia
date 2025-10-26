@@ -15,7 +15,8 @@ from db import (
     listar_conversas, 
     criar_nova_conversa, 
     carregar_mensagens, 
-    salvar_mensagem
+    salvar_mensagem,
+    deletar_conversa
 )
 
 # Carrega as variáveis de ambiente (.env)
@@ -109,23 +110,52 @@ if "conversa_ativa_id" not in st.session_state:
     # print("DEBUG: st.session_state.conversa_ativa_id inicializado como None.")
 
 # Mostra botões para cada conversa existente
-st.sidebar.divider() # Adiciona uma linha divisória
+st.sidebar.divider() 
 st.sidebar.markdown("**Histórico:**")
 if not lista_de_conversas:
     st.sidebar.info("Nenhuma conversa ainda.")
 else:
-    # Mostra primeiro as conversas mais recentes (já ordenado em listar_conversas)
-    for conversa in lista_de_conversas: 
-        # Usa o ID da conversa como chave única para o botão
-        # Isso garante que o Streamlit saiba qual botão foi clicado
-        # Usamos .get() para segurança caso 'titulo' não exista
-        titulo_display = conversa.get('titulo', f'Conversa ID {conversa["id"]}') 
-        if st.sidebar.button(titulo_display, key=f"conversa_{conversa['id']}", use_container_width=True):
-            print(f"DEBUG: Botão da conversa {conversa['id']} clicado.")
-            # Ao clicar, define este como o ID da conversa ativa
-            st.session_state.conversa_ativa_id = conversa['id']
-            # Recarrega a página para mostrar o histórico da conversa selecionada
-            st.rerun() 
+    # Cria um container para os botões de conversa para melhor controle
+    # (Ajuda a evitar que os botões se misturem com outros elementos da sidebar)
+    conversations_container = st.sidebar.container() 
+    
+    with conversations_container:
+        # Mostra primeiro as conversas mais recentes (já ordenado em listar_conversas)
+        for conversa in lista_de_conversas: 
+            conversa_id = conversa['id']
+            # Usamos .get() para segurança caso 'titulo' não exista ou seja None
+            titulo_display = conversa.get('titulo') or f'Conversa ID {conversa_id}' 
+            
+            # --- INÍCIO DA MUDANÇA PRINCIPAL: COLUNAS ---
+            # Cria duas colunas: uma para o nome, outra para a lixeira
+            col1, col2 = st.columns([0.85, 0.15], gap="small") # 85% para o nome, 15% para deletar, pouco espaço entre eles
+            
+            with col1:
+                # Botão para selecionar a conversa (ocupa a maior parte da coluna)
+                if st.button(titulo_display, key=f"conversa_{conversa_id}", use_container_width=True):
+                    print(f"DEBUG: Botão da conversa {conversa_id} clicado.")
+                    st.session_state.conversa_ativa_id = conversa_id
+                    st.rerun() # Recarrega para mostrar o histórico
+            
+            with col2:
+                 # Botão para deletar a conversa (ícone de lixeira 🗑️)
+                 # help= Adiciona uma dica quando o mouse passa por cima
+                 if st.button("🗑️", key=f"delete_{conversa_id}", help=f"Deletar conversa {conversa_id}", use_container_width=True):
+                     print(f"DEBUG: Botão DELETAR conversa {conversa_id} clicado.")
+                     try:
+                        # Chama a função de deletar do db.py
+                        if deletar_conversa(conversa_id):
+                            st.toast(f"Conversa {conversa_id} deletada.", icon="✅") # Mensagem de sucesso rápida
+                            # Se a conversa deletada era a ativa, limpa a seleção
+                            if st.session_state.get("conversa_ativa_id") == conversa_id:
+                                st.session_state.conversa_ativa_id = None
+                            time.sleep(0.5) # Pequeno pause antes de recarregar
+                            st.rerun() # Recarrega para atualizar a sidebar
+                        else:
+                            st.error(f"Erro ao deletar conversa {conversa_id}.")
+                     except Exception as e:
+                         st.error(f"Erro inesperado ao deletar: {e}")
+            # --- FIM DA MUDANÇA PRINCIPAL ---
 
 # --- Área Principal do Chat ---
 
