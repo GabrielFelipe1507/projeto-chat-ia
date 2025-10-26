@@ -241,7 +241,6 @@ def deletar_conversa(id_conversa):
         conn.close()
     return success
 
-# (Cole esta função abaixo da função salvar_mensagem)
 
 def atualizar_titulo_conversa(id_conversa, novo_titulo):
     """Atualiza o título de uma conversa existente."""
