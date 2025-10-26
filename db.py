@@ -241,6 +241,40 @@ def deletar_conversa(id_conversa):
         conn.close()
     return success
 
+# (Cole esta função abaixo da função salvar_mensagem)
+
+def atualizar_titulo_conversa(id_conversa, novo_titulo):
+    """Atualiza o título de uma conversa existente."""
+    conn = get_db_connection()
+    if not conn:
+        print(f"Erro: Não foi possível conectar ao banco para atualizar título da conversa {id_conversa}.")
+        return False
+
+    success = False
+    cursor = conn.cursor()
+    try:
+        # Limpa um pouco o título gerado (remove aspas, limita tamanho)
+        titulo_limpo = novo_titulo.strip().strip('"').strip("'").replace("models/", "")[:250] 
+
+        cursor.execute("UPDATE conversas SET titulo = %s WHERE id = %s", (titulo_limpo, id_conversa))
+        conn.commit()
+        # Verifica se alguma linha foi realmente afetada (atualizada)
+        if cursor.rowcount > 0:
+            success = True
+            print(f"Título da conversa ID {id_conversa} atualizado para: '{titulo_limpo}'")
+        else:
+             # Isso pode acontecer se o ID da conversa for inválido
+             print(f"Nenhuma conversa encontrada com ID {id_conversa} para atualizar título.")
+             success = False # Considera falha se não atualizou
+    except mysql.connector.Error as err:
+        print(f"Erro MySQL ao atualizar título da conversa ID {id_conversa}: {err}")
+    except Exception as e:
+        print(f"Erro inesperado ao atualizar título da conversa ID {id_conversa}: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+    return success
+
 # --- Bloco para Teste (Opcional) ---
 # Se você rodar este arquivo diretamente (python db.py), ele cria as tabelas.
 if __name__ == "__main__":
