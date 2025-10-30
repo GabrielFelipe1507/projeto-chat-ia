@@ -91,6 +91,10 @@ except Exception as e:
 if "conversa_ativa_id" not in st.session_state:
     st.session_state.conversa_ativa_id = None 
 
+# Garante que temos um estado para o "modo de edição"
+if "editing_chat_id" not in st.session_state:
+    st.session_state.editing_chat_id = None # None significa que não estamos editando nada
+
 st.sidebar.divider() 
 st.sidebar.markdown("**Histórico:**")
 if not lista_de_conversas:
@@ -101,24 +105,74 @@ else:
         for conversa in lista_de_conversas: 
             conversa_id = conversa['id']
             titulo_display = conversa.get('titulo') or f'Conversa ID {conversa_id}' 
-            col1, col2 = st.columns([0.85, 0.15], gap="small") 
-            with col1:
-                if st.button(titulo_display, key=f"conversa_{conversa_id}", use_container_width=True):
-                    st.session_state.conversa_ativa_id = conversa_id
-                    st.rerun() 
-            with col2:
-                 if st.button("🗑️", key=f"delete_{conversa_id}", help=f"Deletar conversa {conversa_id}", use_container_width=True):
-                     try:
-                        if deletar_conversa(conversa_id):
-                            st.toast(f"Conversa {conversa_id} deletada.", icon="✅") 
-                            if st.session_state.get("conversa_ativa_id") == conversa_id:
-                                st.session_state.conversa_ativa_id = None
-                            time.sleep(0.5) 
-                            st.rerun() 
-                        else:
-                            st.error(f"Erro ao deletar conversa {conversa_id}.")
-                     except Exception as e:
-                         st.error(f"Erro inesperado ao deletar: {e}")
+            # --- LÓGICA DE EDIÇÃO ---
+            # Verifica se esta conversa é a que está sendo editada
+            if st.session_state.editing_chat_id == conversa_id:
+                # Garante que temos um estado para o input de texto
+                if f"edit_input_{conversa_id}" not in st.session_state:
+                    st.session_state[f"edit_input_{conversa_id}"] = None
+
+                # Mostra o input de texto com o título atual
+                novo_titulo_input = st.text_input(
+                    "Novo Título:", 
+                    value=titulo_display, 
+                    key=f"edit_input_{conversa_id}",
+                    help="Pressione Enter ou clique em Salvar"
+                )
+
+                # Colunas para os botões Salvar e Cancelar
+                col_salvar, col_cancelar = st.columns(2, gap="small")
+
+                with col_salvar:
+                    if st.button("Salvar", key=f"save_{conversa_id}", use_container_width=True, type="primary"):
+                        if novo_titulo_input and novo_titulo_input != titulo_display:
+                            # Chama a função do db.py para salvar no banco
+                            if atualizar_titulo_conversa(conversa_id, novo_titulo_input):
+                                st.toast("Título atualizado!", icon="✅")
+                            else:
+                                st.error("Erro ao salvar o título.")
+                        st.session_state.editing_chat_id = None # Sai do modo de edição
+                        st.rerun()
+
+                with col_cancelar:
+                    if st.button("Cancelar", key=f"cancel_{conversa_id}", use_container_width=True):
+                        st.session_state.editing_chat_id = None # Sai do modo de edição
+                        st.rerun()
+
+            else:
+                # --- MODO DE VISUALIZAÇÃO (Normal) ---
+                # Cria TRÊS colunas: Título, Editar (✏️), Deletar (🗑️)
+                col1, col2, col3 = st.columns([0.7, 0.15, 0.15], gap="small") 
+
+                with col1:
+                    # Botão para selecionar a conversa
+                    if st.button(titulo_display, key=f"conversa_{conversa_id}", use_container_width=True):
+                        st.session_state.conversa_ativa_id = conversa_id
+                        st.session_state.editing_chat_id = None # Garante que sai de qualquer outro modo de edição
+                        st.rerun() 
+
+                with col2:
+                    # Botão de Editar ✏️
+                    if st.button("✏️", key=f"edit_{conversa_id}", help="Renomear conversa", use_container_width=True):
+                        st.session_state.editing_chat_id = conversa_id # Entra em modo de edição
+                        st.rerun() # Recarrega para mostrar o input de texto
+
+                with col3:
+                     # Botão de Deletar 🗑️ (código que você já tinha)
+                     if st.button("🗑️", key=f"delete_{conversa_id}", help=f"Deletar conversa {conversa_id}", use_container_width=True):
+                         print(f"DEBUG: Botão DELETAR conversa {conversa_id} clicado.")
+                         try:
+                             if deletar_conversa(conversa_id):
+                                 st.toast(f"Conversa {conversa_id} deletada.", icon="✅") 
+                                 if st.session_state.get("conversa_ativa_id") == conversa_id:
+                                     st.session_state.conversa_ativa_id = None
+                                 time.sleep(0.5) 
+                                 st.rerun() 
+                             else:
+                                 st.error(f"Erro ao deletar conversa {conversa_id}.")
+                         except Exception as e:
+                             st.error(f"Erro inesperado ao deletar: {e}")
+           
 
 # --- Área Principal ---
 active_chat_id = st.session_state.get("conversa_ativa_id") 
