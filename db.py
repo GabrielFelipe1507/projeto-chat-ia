@@ -1,6 +1,7 @@
 import mysql.connector
-import os
-from dotenv import load_dotenv
+import os #ler variaveis de ambiente
+from dotenv import load_dotenv # para carregar o arquivo .env
+# Importa as classes de mensagem do LangChain, para formatar os dados
 from langchain_core.messages import AIMessage, HumanMessage
 
 # Carrega as variáveis de ambiente (DB_HOST, DB_USER, etc.) do arquivo .env
@@ -51,9 +52,9 @@ print(f"DEBUG: Valor APÓS limpeza (database_str): '{database_str}'")
 db_config = {
     'host': host_str,  # Usa a variável limpa
     'user': user_str,  # Usa a variável limpa
-    'password': password_str,
-    'database': database_str,
-    'port': port_int
+    'password': password_str,  # Usa a variável limpa
+    'database': database_str,  # Usa a variável limpa
+    'port': port_int   # Usa a variável convertida para inteiro
 }
 
 # --- Funções de Interação com o Banco ---
@@ -274,7 +275,7 @@ def atualizar_titulo_conversa(id_conversa, novo_titulo):
         conn.close()
     return success
 
-# --- Bloco para Teste (Opcional) ---
+# --- Bloco para Testes ---
 # Se você rodar este arquivo diretamente (python db.py), ele cria as tabelas.
 if __name__ == "__main__":
     print("Verificando/Criando tabelas do banco de dados...")
