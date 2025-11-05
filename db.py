@@ -3,6 +3,7 @@ import os #ler variaveis de ambiente
 from dotenv import load_dotenv # para carregar o arquivo .env
 # Importa as classes de mensagem do LangChain, para formatar os dados
 from langchain_core.messages import AIMessage, HumanMessage
+from sqlalchemy import create_engine  # Importa a função principal para conectar ao banco de dados
 
 # Carrega as variáveis de ambiente (DB_HOST, DB_USER, etc.) do arquivo .env
 load_dotenv()
@@ -275,7 +276,42 @@ def atualizar_titulo_conversa(id_conversa, novo_titulo):
         conn.close()
     return success
 
-# --- Bloco para Testes ---
+
+# --- NOVO BLOCO PARA O AGENTE SQL (SQLAlchemy) ---
+def get_sqlalchemy_engine():
+    """
+    Cria uma "engine" (motor) de conexão do SQLAlchemy 
+    que o LangChain SQL Agent pode usar.
+    """
+    print("DEBUG: Criando engine SQLAlchemy...")
+
+    # REUTILIZA as variáveis limpas que você já definiu no topo deste arquivo
+    # (user_str, password_str, host_str, port_int, database_str)
+
+    # Formato da URL de conexão do SQLAlchemy:
+    # mysql+mysqlconnector://usuario:senha@host:porta/banco
+    try:
+        # Usa as variáveis JÁ LIMPAS do topo do script
+        url_conexao = f"mysql+mysqlconnector://{user_str}:{password_str}@{host_str}:{port_int}/{database_str}"
+
+        # Cria a "engine" (create_engine já foi importado no topo)
+        engine = create_engine(url_conexao) 
+
+        # Testa a conexão (opcional, mas bom para debug)
+        with engine.connect() as conn:
+            print("DEBUG: Conexão SQLAlchemy com MySQL bem-sucedida!")
+
+        return engine
+
+    except Exception as e:
+        print(f"ERRO: Não foi possível criar a engine SQLAlchemy: {e}")
+        return None
+
+# Cria a engine uma vez quando o db.py é importado
+# O app.py vai importar esta variável 'db_engine'
+db_engine = get_sqlalchemy_engine()
+
+
 # Se você rodar este arquivo diretamente (python db.py), ele cria as tabelas.
 if __name__ == "__main__":
     print("Verificando/Criando tabelas do banco de dados...")

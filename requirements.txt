@@ -1,6 +1,8 @@
 streamlit
 langchain
-langchain-google-genai
 langchain-community
+langchain-experimental
+langchain-google-genai
 mysql-connector-python
 python-dotenv
+sqlalchemy
