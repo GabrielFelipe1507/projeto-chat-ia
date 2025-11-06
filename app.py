@@ -90,6 +90,7 @@ try:
     if db_engine is None:
         st.warning("Aviso: Engine SQLAlchemy não foi criada. O 'Modo Vendas' não funcionará.")
     else:
+        # 5 AQUI
         # 1. Conecta o LangChain ao banco (usando a engine do db.py)
         db_sql = SQLDatabase(engine=db_engine, include_tables=['vendas'])
 
@@ -98,9 +99,11 @@ try:
             llm=llm,
             db=db_sql,
             verbose=True, 
-            agent_type="tool-calling"
+            agent_type="tool-calling",
+            top_k=1000
         )
         
+        # 2 AQUI  com o tool: especialista_vendas
         # 3. "Embrulhamos" o Agente SQL em uma @tool 
         #    (Mesmo que não seja usada por outro agente, é uma boa prática)
         @tool
@@ -110,8 +113,9 @@ try:
             """
             print(f"DEBUG: Cérebro 2 (Especialista Vendas) chamado com input: {input}")
             try:
+                # 3 AQUI Chama o Agente SQL: passa a responsabilidade para o agente
                 resultado = agente_sql.invoke({"input": input})
-                return resultado.get("output", "Não consegui processar a consulta SQL.")
+                return resultado.get("output", "consegui processar a consulta SQL.")
             except Exception as e:
                 print(f"ERRO no especialista_vendas: {e}")
                 return f"Houve um erro ao consultar o banco de dados de vendas: {e}"
@@ -245,10 +249,10 @@ elif active_chat_id:
 else:
     placeholder = "Digite sua primeira mensagem para iniciar um novo chat..."
 
-
+# 1 AQUI
 if prompt := st.chat_input(placeholder, key="chat_input_principal"):
 
-    # --- LÓGICA DO BOTÃO "Modo Vendas" (AGORA SALVANDO) ---
+    # --- LÓGICA DO BOTÃO "Modo Vendas" (SALVANDO) ---
     if st.session_state.get("modo_vendas"):
         
         print(f"DEBUG: Modo Vendas. Pergunta: {prompt}")
@@ -284,6 +288,7 @@ if prompt := st.chat_input(placeholder, key="chat_input_principal"):
             st.error("Erro ao salvar sua mensagem.")
             st.stop()
 
+        # 4 AQUI
         # 4. Chamar o CÉREBRO 2 (Agente SQL)
         try:
             with st.spinner("Consultando banco de dados de Vendas..."):

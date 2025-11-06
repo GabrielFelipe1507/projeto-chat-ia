@@ -8,12 +8,12 @@ from sqlalchemy import create_engine  # Importa a função principal para conect
 # Carrega as variáveis de ambiente (DB_HOST, DB_USER, etc.) do arquivo .env
 load_dotenv()
 
-# LINHA DE TESTE - Adicione isto
+# LINHA DE TESTE
+# print(f"DEBUG: Valor lido para DB_HOST do .env: '{os.getenv('DB_HOST', 'NaoDefinido')}'")
 print(
     f"DEBUG: Valor lido para DB_PORT do .env: '{os.getenv('DB_PORT', 'NaoDefinido')}'")
 
 # --- Configurações de Conexão ---
-
 # Limpa o DB_PORT (limpa o # e as aspas)
 port_str = os.getenv("DB_PORT", "3306").strip().split('#')[
     0].strip().strip('"')
@@ -50,6 +50,7 @@ print(f"DEBUG: Valor lido para DB_NAME do .env: '{os.getenv('DB_NAME', 'NaoDefin
 print(f"DEBUG: Valor APÓS limpeza (database_str): '{database_str}'") 
 #-----------------------------------------
 
+# 3 AQUI
 db_config = {
     'host': host_str,  # Usa a variável limpa
     'user': user_str,  # Usa a variável limpa
@@ -58,9 +59,8 @@ db_config = {
     'port': port_int   # Usa a variável convertida para inteiro
 }
 
+
 # --- Funções de Interação com o Banco ---
-
-
 def get_db_connection():
     """Cria e retorna uma nova conexão com o banco."""
     try:
@@ -276,8 +276,8 @@ def atualizar_titulo_conversa(id_conversa, novo_titulo):
         conn.close()
     return success
 
-
-# --- NOVO BLOCO PARA O AGENTE SQL (SQLAlchemy) ---
+# 2 AQUI
+# --- BLOCO PARA O AGENTE SQL (SQLAlchemy) ---
 def get_sqlalchemy_engine():
     """
     Cria uma "engine" (motor) de conexão do SQLAlchemy 
@@ -307,6 +307,7 @@ def get_sqlalchemy_engine():
         print(f"ERRO: Não foi possível criar a engine SQLAlchemy: {e}")
         return None
 
+# 1 AQUI
 # Cria a engine uma vez quando o db.py é importado
 # O app.py vai importar esta variável 'db_engine'
 db_engine = get_sqlalchemy_engine()
